@@ -665,7 +665,7 @@ require('lazy').setup({
       local servers = {
         clangd = {
           filetypes = { 'c', 'cpp', 'cuda' }, -- add "cuda"
-          cmd = { 'clangd', '--background-index', '--clang-tidy', '--header-insertion=never' },
+          cmd = { 'clangd', '--background-index', '--clang-tidy', '--header-insertion=never', '--query-driver=/usr/bin/g++' },
           root_dir = require('lspconfig.util').root_pattern('compile_commands.json', '.git'),
         },
 
