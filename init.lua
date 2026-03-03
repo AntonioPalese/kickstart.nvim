@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -274,18 +274,35 @@ require('lazy').setup({
     'mfussenegger/nvim-dap-python',
     dependencies = { 'mfussenegger/nvim-dap' },
     config = function()
+      local dap = require 'dap'
       local dap_python = require 'dap-python'
 
-      -- Punta al python del venv attivo, o di sistema come fallback
-      local python = (function()
+      local python = vim.fn.trim(vim.fn.system 'uv run which python')
+      if python == '' then
         local venv = os.getenv 'VIRTUAL_ENV'
-        if venv then
-          return venv .. '/bin/python'
-        end
-        return vim.fn.exepath 'python3' or 'python'
-      end)()
+        python = venv and (venv .. '/bin/python') or vim.fn.exepath 'python3' or 'python'
+      end
+
+      require('dap.ext.vscode').load_launchjs = function() end
 
       dap_python.setup(python)
+
+      vim.defer_fn(function()
+        dap.configurations.python = {
+          {
+            type = 'python',
+            request = 'launch',
+            name = 'Debug Module: optuna_hpo',
+            module = 'optuna_hpo.main',
+            args = function()
+              local args = vim.fn.input 'Args: '
+              return vim.split(args, ' ', { trimempty = true })
+            end,
+            cwd = vim.fn.getcwd(),
+            pythonPath = python,
+          },
+        }
+      end, 100)
 
       -- Keymaps
       vim.keymap.set('n', '<leader>dn', dap_python.test_method, { desc = '[D]ebug [N]earest test' })
@@ -813,6 +830,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        python = { 'ruff_format' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
