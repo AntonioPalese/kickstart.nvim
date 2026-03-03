@@ -682,15 +682,15 @@ require('lazy').setup({
             python = {
               -- Usa il python dell'ambiente attivo al momento del lancio di nvim
               pythonPath = (function()
-                local venv = os.getenv("VIRTUAL_ENV")
+                local venv = os.getenv 'VIRTUAL_ENV'
                 if venv then
-                  return venv .. "/bin/python"
+                  return venv .. '/bin/python'
                 end
-                return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
+                return vim.fn.exepath 'python3' or vim.fn.exepath 'python' or 'python'
               end)(),
             },
           },
-	},
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
