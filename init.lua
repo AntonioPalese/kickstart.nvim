@@ -270,6 +270,28 @@ require('lazy').setup({
   -- options to `gitsigns.nvim`.
   --
   -- See `:help gitsigns` to understand what the configuration keys do
+  {
+    'mfussenegger/nvim-dap-python',
+    dependencies = { 'mfussenegger/nvim-dap' },
+    config = function()
+      local dap_python = require 'dap-python'
+
+      -- Punta al python del venv attivo, o di sistema come fallback
+      local python = (function()
+        local venv = os.getenv 'VIRTUAL_ENV'
+        if venv then
+          return venv .. '/bin/python'
+        end
+        return vim.fn.exepath 'python3' or 'python'
+      end)()
+
+      dap_python.setup(python)
+
+      -- Keymaps
+      vim.keymap.set('n', '<leader>dn', dap_python.test_method, { desc = '[D]ebug [N]earest test' })
+      vim.keymap.set('n', '<leader>df', dap_python.test_class, { desc = '[D]ebug test [F]ile/class' })
+    end,
+  },
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
     opts = {
