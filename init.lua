@@ -175,6 +175,18 @@ vim.opt.smartindent = true -- Auto-indent new lines
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+vim.keymap.set('n', '<leader>th', function()
+  vim.cmd 'split | term'
+  vim.fn.chansend(vim.b.terminal_job_id, 'conda deactivate;')
+  vim.fn.chansend(vim.b.terminal_job_id, 'source .venv/bin/activate\n')
+end, { desc = '[T]erminal [H]orizontal' })
+
+vim.keymap.set('n', '<leader>tv', function()
+  vim.cmd 'vsplit | term'
+  vim.fn.chansend(vim.b.terminal_job_id, 'conda deactivate;')
+  vim.fn.chansend(vim.b.terminal_job_id, 'source .venv/bin/activate\n')
+end, { desc = '[T]erminal [V]ertical' })
+
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
@@ -284,6 +296,25 @@ require('lazy').setup({
       { '<S-Tab>', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer precedente' },
       { '<leader>x', '<cmd>bdelete<CR>', desc = 'Chiudi buffer' },
     },
+  },
+  {
+    'rcarriga/nvim-dap-ui',
+    dependencies = { 'mfussenegger/nvim-dap' },
+    config = function()
+      local dap = require 'dap'
+      local dapui = require 'dapui'
+      dapui.setup()
+      dap.listeners.after.event_initialized['dapui_config'] = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated['dapui_config'] = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited['dapui_config'] = function()
+        dapui.close()
+      end
+      vim.keymap.set('n', '<leader>du', dapui.toggle, { desc = '[D]ebug [U]I toggle' })
+    end,
   },
   {
     'mfussenegger/nvim-dap-python',
@@ -671,11 +702,11 @@ require('lazy').setup({
           -- code, if the language server you are using supports them
           --
           -- This may be unwanted, since they displace some of your code
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-            map('<leader>th', function()
-              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-            end, '[T]oggle Inlay [H]ints')
-          end
+          -- if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+          --  map('<leader>th', function()
+          --    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+          --  end, '[T]oggle Inlay [H]ints')
+          -- end
         end,
       })
 
@@ -732,16 +763,21 @@ require('lazy').setup({
 
         -- gopls = {},
         pyright = {
+          before_init = function(_, config)
+            local venv = os.getenv 'VIRTUAL_ENV'
+            if venv then
+              config.settings.python.pythonPath = venv .. '/bin/python'
+            else
+              config.settings.python.pythonPath = vim.fn.trim(vim.fn.system 'uv run which python')
+            end
+          end,
           settings = {
             python = {
-              -- Usa il python dell'ambiente attivo al momento del lancio di nvim
-              pythonPath = (function()
-                local venv = os.getenv 'VIRTUAL_ENV'
-                if venv then
-                  return venv .. '/bin/python'
-                end
-                return vim.fn.exepath 'python3' or vim.fn.exepath 'python' or 'python'
-              end)(),
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'openFilesOnly',
+                useLibraryCodeForTypes = true,
+              },
             },
           },
         },
@@ -1016,30 +1052,17 @@ require('lazy').setup({
       --  Check out: https://github.com/echasnovski/mini.nvim
     end,
   },
-  { -- Highlight, edit, and navigate code
+  {
     'nvim-treesitter/nvim-treesitter',
+    tag = 'v0.9.3',
     build = ':TSUpdate',
-    -- main = 'nvim-treesitter.configs', -- Sets main module to use for opts !!! RIMOSSA A MANO !!!
-    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+    main = 'nvim-treesitter.configs',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
-      -- Autoinstall languages that are not installed
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
       auto_install = true,
-      highlight = {
-        enable = true,
-        -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-        --  If you are experiencing weird indenting issues, add the language to
-        --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
-      },
-      indent = { enable = true, disable = { 'ruby' } },
+      highlight = { enable = true },
+      indent = { enable = true },
     },
-    -- There are additional nvim-treesitter modules that you can use to interact
-    -- with nvim-treesitter. You should go explore a few and see what interests you:
-    --
-    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
