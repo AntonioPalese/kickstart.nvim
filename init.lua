@@ -271,6 +271,21 @@ require('lazy').setup({
   --
   -- See `:help gitsigns` to understand what the configuration keys do
   {
+    'akinsho/bufferline.nvim',
+    version = '*',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    opts = {
+      options = {
+        separator_style = 'slant',
+      },
+    },
+    keys = {
+      { '<Tab>', '<cmd>BufferLineCycleNext<CR>', desc = 'Buffer successivo' },
+      { '<S-Tab>', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer precedente' },
+      { '<leader>x', '<cmd>bdelete<CR>', desc = 'Chiudi buffer' },
+    },
+  },
+  {
     'mfussenegger/nvim-dap-python',
     dependencies = { 'mfussenegger/nvim-dap' },
     config = function()
@@ -898,7 +913,7 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'default',
+        preset = 'enter',
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -1004,7 +1019,7 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
+    -- main = 'nvim-treesitter.configs', -- Sets main module to use for opts !!! RIMOSSA A MANO !!!
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
       ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
