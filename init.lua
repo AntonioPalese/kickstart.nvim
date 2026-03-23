@@ -367,6 +367,13 @@ require('lazy').setup({
       },
     },
   },
+  {
+    'kdheepak/lazygit.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = {
+      { '<leader>gg', '<cmd>LazyGit<CR>', desc = 'Lazy[G]it' },
+    },
+  },
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
@@ -431,6 +438,7 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>g', group = '[G]it' },
       },
     },
   },
