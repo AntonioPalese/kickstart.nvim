@@ -355,6 +355,22 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>df', dap_python.test_class, { desc = '[D]ebug test [F]ile/class' })
     end,
   },
+  {
+    'mfussenegger/nvim-lint',
+    event = { 'BufReadPre', 'BufNewFile' },
+    config = function()
+      local lint = require 'lint'
+      lint.linters_by_ft = {
+        python = { 'mypy' },
+      }
+
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
+        callback = function()
+          lint.try_lint()
+        end,
+      })
+    end,
+  },
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -865,7 +881,7 @@ require('lazy').setup({
       {
         '<leader>f',
         function()
-          require('conform').format { async = true, lsp_format = 'fallback' }
+          require('conform').format { async = true, lsp_format = 'never' }
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -882,14 +898,14 @@ require('lazy').setup({
           return nil
         else
           return {
-            timeout_ms = 500,
-            lsp_format = 'fallback',
+            timeout_ms = 1500,
+            lsp_format = 'never',
           }
         end
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        python = { 'ruff_format' },
+        python = { 'ruff_organize_imports', 'ruff_fix', 'ruff_format' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
