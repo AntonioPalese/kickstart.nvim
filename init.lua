@@ -271,6 +271,29 @@ do
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
     callback = function() vim.hl.on_yank() end,
   })
+
+  -- [PERSONALE] Reload buffers changed outside of Neovim (e.g. by Claude Code)
+  vim.o.autoread = true
+  vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI', 'TermLeave' }, {
+    desc = 'Check if files changed on disk',
+    group = vim.api.nvim_create_augroup('personal-autoread', { clear = true }),
+    callback = function()
+      -- :checktime is not allowed in command-line mode or the command-line window
+      if vim.fn.mode() ~= 'c' and vim.fn.getcmdwintype() == '' then vim.cmd 'checktime' end
+    end,
+  })
+
+  -- [PERSONALE] Also poll every second, so external edits show up while idle
+  local autoread_timer = vim.uv.new_timer()
+  if autoread_timer then
+    autoread_timer:start(
+      1000,
+      1000,
+      vim.schedule_wrap(function()
+        if vim.fn.mode() ~= 'c' and vim.fn.getcmdwintype() == '' then vim.cmd 'checktime' end
+      end)
+    )
+  end
 end
 
 -- ============================================================
@@ -327,6 +350,11 @@ do
 
       if name == 'LuaSnip' then
         if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
+        return
+      end
+
+      if name == 'markdown-preview.nvim' and vim.fn.executable 'npm' == 1 then
+        run_build(name, { 'npm', 'install' }, ev.data.path .. '/app')
         return
       end
 
@@ -1164,6 +1192,43 @@ do
   vim.keymap.set('n', '<leader>dn', dap_python.test_method, { desc = '[D]ebug [N]earest test' })
   vim.keymap.set('n', '<leader>df', dap_python.test_class, { desc = '[D]ebug test [F]ile/class' })
   vim.keymap.set('n', '<leader>du', function() require('dapui').toggle() end, { desc = '[D]ebug [U]I toggle' })
+end
+
+-- ============================================================
+-- SECTION 12: [PERSONALE] MARKDOWN
+-- render-markdown.nvim (in-buffer rendering), markdown-preview.nvim (browser preview)
+-- ============================================================
+do
+  --  NOTE: Must come after Treesitter (Section 9) and mini.icons (Section 4).
+  vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
+  require('render-markdown').setup {
+    -- Render in normal/command/terminal mode; insert mode shows the raw source
+    render_modes = { 'n', 'c', 't' },
+    -- Show raw text on the cursor line, so it can be edited
+    anti_conceal = { enabled = true },
+  }
+
+  vim.keymap.set('n', '<leader>tm', '<cmd>RenderMarkdown toggle<CR>', { desc = '[T]oggle [M]arkdown render' })
+
+  -- [[ Browser preview over SSH ]]
+  --  The preview server runs on the remote machine; forward the port from the local one:
+  --    ssh -L 8090:localhost:8090 user@host
+  --  then open the printed URL in the local browser.
+  --  NOTE: Needs Node.js on the remote machine; the npm build runs in the PackChanged autocmd (Section 3).
+  vim.g.mkdp_port = '8090' -- Fixed port, so the SSH forward always matches
+  vim.g.mkdp_open_to_the_world = 0 -- Only listen on localhost (reached through the SSH tunnel)
+
+  -- No browser on the remote machine: just print the URL instead of trying to open one
+  vim.cmd [[
+    function! MkdpPrintUrl(url)
+      echo 'Markdown preview: ' . a:url
+    endfunction
+  ]]
+  vim.g.mkdp_browserfunc = 'MkdpPrintUrl'
+
+  vim.pack.add { gh 'iamcco/markdown-preview.nvim' }
+
+  vim.keymap.set('n', '<leader>tp', '<cmd>MarkdownPreviewToggle<CR>', { desc = '[T]oggle Markdown [P]review' })
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
